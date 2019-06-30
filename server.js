@@ -1,9 +1,11 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const cors = require('cors');
+// const saltRounds = 10;
 
 app.use(express.json());
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.send(database.users)
@@ -28,7 +30,7 @@ const database = {
     ]
 }
 
-app.post('/signin', (req, res) => {
+app.post('/login', (req, res) => {
 
     bcrypt.compare('Ann', '$2b$10$j6xuACF3/yW9En3nRCEI4.GRm7gxCMh0mGCbMsvoBRnECU73vqc4W', function(err, res) {
         console.log('first guess',res)
@@ -39,7 +41,7 @@ app.post('/signin', (req, res) => {
 
     if(req.body.email === database.users[0].email &&
        req.body.password === database.users[0].password) {
-           res.json('Login Success!')
+           res.json('Login Success')
        } else {
            res.status(400).json('Error logging in')
        }
@@ -48,16 +50,10 @@ app.post('/signin', (req, res) => {
 app.post('/register', (req, res) => {
     const { email, name, password } = req.body
 
-    // //Password hashing
-    // bcrypt.hash(password, saltRounds, function(err, hash) {
-    //     console.log(hash)
-    //   });
-
     database.users.push({
         id: '125',
         name: name,
         email: email,
-        password: password,
         joined: new Date()
     })
     res.json(database.users[database.users.length - 1])
@@ -77,6 +73,7 @@ app.get('/profile/:id', (req, res) => {
     }
 })
 
-app.listen(3000, () => {
-    console.log('App is running on port 3000');
+app.listen(4000, () => {
+    console.log('App is running on port 4000');
 })
+ 
