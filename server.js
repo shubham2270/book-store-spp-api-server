@@ -2,7 +2,22 @@ const express = require('express');
 const app = express();
 const bcrypt = require('bcrypt');
 const cors = require('cors');
+const knex = require('knex');
 // const saltRounds = 10;
+
+const db = knex({
+    client: 'mysql',
+    connection: {
+      host : '127.0.0.1',
+      user : 'root',
+      password : 'dummypassword',
+      database : 'book_store'
+}
+});
+
+db.select('*').from('users').then(data => {
+    console.log(data)
+});
 
 app.use(express.json());
 app.use(cors());
@@ -49,14 +64,16 @@ app.post('/login', (req, res) => {
 
 app.post('/register', (req, res) => {
     const { email, name, password } = req.body
-
-    database.users.push({
-        id: '125',
-        name: name,
+    db('users')
+    .insert([{
         email: email,
+        name: name,
         joined: new Date()
+    }]).then(response => {
+        res.json(response)
     })
-    res.json(database.users[database.users.length - 1])
+    .catch(err => res.status(400).json('unable to register'))
+  
 })
 
 app.get('/profile/:id', (req, res) => {
