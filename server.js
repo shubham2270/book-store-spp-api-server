@@ -15,10 +15,6 @@ const db = knex({
     }
 });
 
-// db.select('*').from('users').then(data => {
-//     console.log(data)
-// });
-
 app.use(express.json());
 app.use(cors());
 
@@ -26,44 +22,36 @@ app.get('/', (req, res) => {
     res.send(database.users)
 })
 
-const database = {
-    users: [
-        {
-            id: '123',
-            name: 'John',
-            email: 'john@gmail.com',
-            password: 'john',
-            joined: new Date()
-        },
-        {
-            id: '124',
-            name: 'Sally',
-            email: 'Sally@gmail.com',
-            password: 'Sally',
-            joined: new Date()
-        },
-    ]
-}
 
 app.post('/login', (req, res) => {
-
-    bcrypt.compareSync('Ann', '$2b$10$j6xuACF3/yW9En3nRCEI4.GRm7gxCMh0mGCbMsvoBRnECU73vqc4W', function (err, res) {
-        console.log('first guess', res)
-    });
-    bcrypt.compareSync('ann', '$2b$10$j6xuACF3/yW9En3nRCEI4.GRm7gxCMh0mGCbMsvoBRnECU73vqc4W', function (err, res) {
-        console.log('second guess', res)
-    });
-
-    if (req.body.email === database.users[0].email &&
-        req.body.password === database.users[0].password) {
-        res.json('Login Success')
-    } else {
-        res.status(400).json('Error logging in')
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json('incorrect form submission');
     }
+
+    db.select('email', 'hash').from('login')
+    .where('email', '=', email)
+    .then(data => {
+       const isValid = bcrypt.compareSync(password, data[0].hash);
+       if (isValid) {
+          return db.select('*').from('users')
+           .where('email', '=', email)
+           .then(user => {
+            res.json('Login Success')
+           })
+          .catch(err => res.status(400).json('unable to get user'))
+       } else {
+           res.status(400).json('wrong credentials')
+       }
+    })
+    .catch(err => res.status(400).json('Wrong credentials'))
 })
 
 app.post('/register', (req, res) => {
     const { email, name, password } = req.body;
+    if (!email || !name || !password) {
+        return res.status(400).json('incorrect form submission');
+    }
     const hash = bcrypt.hashSync(password, 10);
     db.transaction(trx => {
         trx.insert({
@@ -71,12 +59,11 @@ app.post('/register', (req, res) => {
             email: email
         })
             .into('login')
-            // res.json(email)
             .then(loginEmail => {
                 return trx('users')
                     // .returning('*')
                     .insert([{
-                        email: loginEmail,
+                        email: email,
                         name: name,
                         joined: new Date()
                     }])
